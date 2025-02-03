@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
@@ -10,23 +10,31 @@ import "./Form.css";
 export default function Form() {
   const [messages, setMessages] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
     const inputData = formData.get("inputData") as string;
+    formData.append("file", file as File);
 
     setMessages((prev) => [...prev, `🧑‍💻: ${inputData}`]); // User message
     event.currentTarget.reset(); // Clear input
 
-    const response = await fetch("/api/ollama", {
+    const endpoint = "/api/upload";
+
+    const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputData }),
+      body: formData,
     });
 
     if (!response.body) return;
@@ -48,7 +56,6 @@ export default function Form() {
 
     setMessages((prev) => [...prev, message]);
     setCurrentMessage("");
-    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -88,9 +95,12 @@ export default function Form() {
           className="chat-input"
           placeholder="Type a message..."
         />
-        <button type="submit" disabled={isLoading} className="chat-submit-btn">
-          {isLoading ? "..." : "Send"}
-        </button>
+        <input
+          type="file"
+          accept="image/jpg, image/png, image/jpeg"
+          onChange={handleFileChange}
+        />
+        <button type="submit" className="chat-submit-btn"></button>
       </form>
     </div>
   );

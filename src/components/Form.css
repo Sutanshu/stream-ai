@@ -49,7 +49,7 @@
   padding: 10px;
   border-radius: 5px;
   overflow-x: auto;
-  font-family: "Courier New", monospace;
+  font-family: ui-sans-serif;
 }
 
 /* Chat input form */
