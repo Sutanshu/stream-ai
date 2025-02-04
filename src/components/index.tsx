@@ -134,10 +134,10 @@ export default function Chat() {
                 )}
               </div>
               <div
-                className={`max-w-[80%] overflow-hidden rounded-lg p-4 ${
+                className={`max-w-[80%] rounded-lg p-4 ${
                   msg.type === "user"
-                    ? "bg-blue-100 text-blue-900"
-                    : "bg-purple-100 text-purple-900"
+                    ? "bg-gray-300 text-white-900"
+                    : "bg-gray-100 text-white-900"
                 }`}
               >
                 <ReactMarkdown
@@ -156,11 +156,8 @@ export default function Chat() {
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
               <Bot className="w-5 h-5 text-purple-600" />
             </div>
-            <div className="max-w-[80%] overflow-hidden rounded-lg p-4 bg-purple-100 text-purple-900">
-              <ReactMarkdown
-                rehypePlugins={[rehypeHighlight]}
-                className="prose prose-sm max-w-none"
-              >
+            <div>
+              <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
                 {currentMessage}
               </ReactMarkdown>
             </div>
