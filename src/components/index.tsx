@@ -8,7 +8,8 @@ import "highlight.js/styles/github-dark.css";
 import { Paperclip, Send, Bot, User } from "lucide-react";
 
 export default function Chat() {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [userMessage, setUserMessage] = useState<string[]>([]);
+  const [botMessage, setBotMessage] = useState<string[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -21,6 +22,33 @@ export default function Chat() {
       setFile(e.target.files[0]);
     }
   };
+  const fileContent = file && (
+    <img src={URL.createObjectURL(file)} alt="" className="mt-2" />
+  );
+  // Helper function to get all messages in chronological order
+  const getAllMessages = () => {
+    const allMessages = [];
+    let userIndex = 0;
+    let botIndex = 0;
+
+    while (userIndex < userMessage.length || botIndex < botMessage.length) {
+      if (userIndex < userMessage.length) {
+        allMessages.push({ type: "user", content: userMessage[userIndex] });
+        if (file && userIndex === userMessage.length - 1) {
+          allMessages.push({
+            type: "user",
+            file: fileContent,
+          });
+        }
+        userIndex++;
+      }
+      if (botIndex < botMessage.length) {
+        allMessages.push({ type: "bot", content: botMessage[botIndex] });
+        botIndex++;
+      }
+    }
+    return allMessages;
+  };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +59,7 @@ export default function Chat() {
     formData.append("inputData", inputValue);
     if (file) formData.append("file", file);
 
-    setMessages((prev) => [...prev, `🧑‍💻: ${inputValue}`]);
+    setUserMessage((prev) => [...prev, inputValue]);
     setInputValue("");
     setFile(null);
     if (fileInputRef.current) {
@@ -49,7 +77,7 @@ export default function Chat() {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let message = "🤖: ";
+    let message = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -60,13 +88,13 @@ export default function Chat() {
       setCurrentMessage(message);
     }
 
-    setMessages((prev) => [...prev, message]);
+    setBotMessage((prev) => [...prev, message]);
     setCurrentMessage("");
   }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatEndRef]);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -77,58 +105,63 @@ export default function Chat() {
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {userMessage.length === 0 && botMessage.length === 0 && (
           <div className="text-center text-2xl font-semibold text-gray-700 mt-20">
             What can I help you ship?
           </div>
         )}
         <AnimatePresence>
-          {messages.map((msg, index) => (
+          {getAllMessages().map((msg, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="flex items-start space-x-3"
+              className={`flex items-start space-x-3 ${
+                msg.type === "bot" ? "flex-row-reverse space-x-reverse" : ""
+              }`}
             >
               <div
                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                  msg.startsWith("🧑‍💻") ? "bg-blue-100" : "bg-purple-100"
+                  msg.type === "user" ? "bg-blue-100" : "bg-purple-100"
                 }`}
               >
-                {msg.startsWith("🧑‍💻") ? (
+                {msg.type === "user" ? (
                   <User className="w-5 h-5 text-blue-600" />
                 ) : (
                   <Bot className="w-5 h-5 text-purple-600" />
                 )}
               </div>
               <div
-                className={`flex-1 max-w-3xl overflow-hidden rounded-lg p-4 ${
-                  msg.startsWith("🧑‍💻") ? "bg-blue-50" : "bg-purple-50"
+                className={`max-w-[80%] overflow-hidden rounded-lg p-4 ${
+                  msg.type === "user"
+                    ? "bg-blue-100 text-blue-900"
+                    : "bg-purple-100 text-purple-900"
                 }`}
               >
                 <ReactMarkdown
                   rehypePlugins={[rehypeHighlight]}
                   className="prose prose-sm max-w-none"
                 >
-                  {msg.substring(4)}
+                  {msg.content}
                 </ReactMarkdown>
+                {msg.file}
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
         {currentMessage && (
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-3 flex-row-reverse space-x-reverse">
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
               <Bot className="w-5 h-5 text-purple-600" />
             </div>
-            <div className="flex-1 max-w-3xl overflow-hidden rounded-lg p-4 bg-purple-50">
+            <div className="max-w-[80%] overflow-hidden rounded-lg p-4 bg-purple-100 text-purple-900">
               <ReactMarkdown
                 rehypePlugins={[rehypeHighlight]}
                 className="prose prose-sm max-w-none"
               >
-                {currentMessage.substring(4)}
+                {currentMessage}
               </ReactMarkdown>
             </div>
           </div>
